@@ -85,4 +85,14 @@
 
 input {
     width: 40% !important;
+    margin-top: 5px;
+    margin-bottom: 15px;
 }
+
+.ui-sortable tr {
+    cursor:pointer; 
+}    
+
+.ui-sortable tr:hover {
+    background:rgba(244,251,17,0.45); 
+} 
