@@ -1,0 +1,174 @@
+<!DOCTYPE html><html>
+	<head>
+		<title>Budget Analysis Application</title>
+
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css">
+		<link rel="stylesheet" type="text/css" href="css/style.css">
+
+		
+		<script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+		<script src="https://code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+		<script src='https://cdn.firebase.com/js/client/2.2.1/firebase.js'></script>
+		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+		<script type="text/javascript" src="js/budgetapp.js"></script>
+
+	</head>
+  <body onload="loaditems();">
+  	<div id="main" class="container">
+      <div class="row">
+  			<div id="sidebar-wrapper" class="col-xs-3">  			
+            <ul id="tabs" class="sidebar-nav" role="tablist">
+                <li class="sidebar-brand">    </li>
+                <li  role="presentation">
+                    <a href="#dashboard">Dashboard</a>
+                </li>       
+                <li role="presentation">
+                    <a href="#budget">Budget Allocations</a>
+                </li>         
+                <li role="presentation">
+                    <a href="#income">Income</a>
+                </li>
+                <li role="presentation">
+                    <a href="#expenses">Expenses</a>
+                </li>
+                <li role="presentation">
+                    <a href="#accounts">Accounts</a>
+                </li>
+                
+             
+            </ul>
+      	  </div>			
+					<div id="page-content-wrapper" class="col-xs-9"> 
+						<div id="header" class="page-header "> </div>
+						<div class="tab-content col-md-8"> 
+			        <div id="dashboard" class="tab-pane fade in active">
+
+				        	  
+			        </div>
+			        <div id="budget" class="tab-pane fade">			        
+				        <table class="table table-striped">
+				        	<thead>
+						        <tr>
+						          <th>Item</th>
+						          <th>Amount</th>						          
+						        </tr>
+						      </thead>
+						      <tbody  id='budlist'>
+        						<tr></tr>
+        					</tbody>
+					    	</table>
+			        	<div class="form-group form-inline"> 
+			        		<p>You can add more items below</p>
+			        		<p><span id="budgerror"  class=""></span></p>
+			            <input type='text' id='budg' class="form-control" placeholder='Add Item' required>
+			            <input type='number' id='budgamt' class="form-control" placeholder='Amount' required>
+			            <!-- <input type='date' id='incdue' class="form-control" placeholder='Due Date' required> -->
+			    				<button type="button" id='budbtn' class="btn btn-default btn-sm" onclick="sendtodb(this.id)">
+			  						<span class="glyphicon glyphicon-plus " aria-hidden="true"></span>
+									</button>
+								</div>	
+			        </div>
+			 
+			        <div id="income" class="tab-pane fade">
+			        	<table class="table table-striped">
+				        	<thead>
+						        <tr>
+						          <th>Item</th>
+						          <th>Amount</th>						          
+						        </tr>
+						      </thead>
+						      <tbody  id='inclist'>
+        						<tr></tr>
+        					</tbody>
+					    	</table>					    	
+			        	<div class="form-group form-inline">
+			        		<p>You can add more items below</p>
+			        		<p><span id="incerror" class=""></span></p>
+				          <input type='text' id='inc' class="form-control" placeholder='Name' required>
+				          <input type='number' id='incamt' class="form-control" placeholder='Amount' required>
+			    				<button type="submit"  id='incbtn' class="btn btn-default btn-sm" onclick="sendtodb(this.id)">
+			  						<span class="glyphicon glyphicon-plus " aria-hidden="true"></span>
+									</button> 
+								</div>									
+			        </div>
+			 
+			        <div id="expenses" class="tab-pane fade">
+			        	<table class="table table-striped">
+				        	<thead>
+						        <tr>
+						          <th>Item</th>
+						          <th>Category</th>		
+						          <th>Amount</th>						          
+						        </tr>
+						      </thead>
+						      <tbody  id='explist'>
+        						<tr></tr>
+        					</tbody>
+					    	</table>			        	
+			        	<div class="form-group form-inline">
+			        		<p>You can add more items below</p>
+			        		<p><span id="experror"  class=""></span></p>
+			            <input type='text' id='exp' class="form-control" placeholder='Add Item' required>
+			            <input type='number' id='expamt' class="form-control" placeholder='Amount' required>
+			            <select id="expselect" class="form-control" >
+									  <option value="0">Select Category</option>
+									  
+									</select>
+			            <!-- <input type='date' id='incdue' class="form-control" placeholder='Due Date' required> -->
+			    				<button type="button" id='expbtn' class="btn btn-default btn-sm" onclick="sendtodb(this.id)">
+			  						<span class="glyphicon glyphicon-plus " aria-hidden="true"></span>
+									</button>
+								</div>	
+			        </div>
+			 
+			        <div id="accounts" class="tab-pane fade">			        	
+			        	<table class="table table-striped">
+				        	<thead>
+						        <tr>
+						          <th>Account Name</th>
+						          <th>Account Balance</th>						          
+						        </tr>
+						      </thead>
+						      <tbody  id='acclist'>
+        						<tr></tr>
+        					</tbody>
+					    	</table>
+			        	<div class="form-group form-inline">
+			        		<p>You can add more accounts below</p>
+			        		<p><span id="accerror" class=""></span></p>
+				        	<input type='text' id='acc' class="form-control" placeholder='Add Account' required>
+				        	<input type='number' id='accbal' class="form-control" placeholder='Account Balance' required>
+			    				<button type="button" id='accbtn' class="btn btn-default btn-sm" onclick="sendtodb(this.id)">
+			  						<span class="glyphicon glyphicon-plus " aria-hidden="true"></span>
+									</button>
+								</div>	
+			        </div>
+			        
+			       </div> 
+			       <div class="col-md-4"> 
+			       		<div id="incsummary" class="well">
+			       				<p><strong>Income & Accounts Balance (KES)</strong></p>
+			       				<p>Amount Available: <span id="available"></span></p>
+			       				<p>Expected Income: <span id="expected"></span></p>
+			       				
+			       				<h3>Totals</h3>
+			       		 </div>
+			       		<div id="expsummary" class="well">
+			       				<p><strong>Expenses (KES)</strong></p>
+			       				<p>Budgeted For: <span id="budgeted"></span> </p>
+			       				<p>Actual Spend: <span id="spend"></span> </p>
+			       		 </div>
+			       		<div id="totals"> </div>
+
+			       </div>
+	    		</div>
+					       
+	      
+    	</div>
+  	</div>
+
+  	
+
+  </body>
+</html>
