@@ -3,56 +3,23 @@ var incomes = myDataRef.child('incomes');
 var expenses = myDataRef.child('expenses');
 var accounts = myDataRef.child('accounts');
 var allocations = myDataRef.child('allocations');
-var executed = false;
+var executed = false,
+  inctotals = 0,
+  todelete;
 
 function loaditems() {
-  allocations.child('records').once("value", function(snapshot) {
-    var i = 1;
-    snapshot.forEach(function(childSnapshot) {
-      var key = childSnapshot.key();
-      var childData = childSnapshot.val();
-      $('<tr/>').text('').prepend($('<td/>').text(childData.amount)).prepend(
-        $('<td/>').text(childData.name + ': ')).prepend($(
-        '<td class="priority">').text(i)).appendTo($('#budlist'));
-      $('#budlist')[0].scrollTop = $('#budlist')[0].scrollHeight;
-      $('<option/>').text(childData.name).appendTo($('#expselect'));
-      i += 1;
-    });
-    settotals(allocations, '#budgeted');
-  });
-  incomes.child('records').once("value", function(snapshot) {
-    snapshot.forEach(function(childSnapshot) {
-      var key = childSnapshot.key();
-      var childData = childSnapshot.val();
-      $('<tr/>').text('').prepend($('<td/>').text(childData.amount)).prepend(
-        $('<td/>').text(childData.name + ': ')).appendTo($(
-        '#inclist'));
-      $('#inclist')[0].scrollTop = $('#inclist')[0].scrollHeight;
-    });
-    settotals(incomes, '#expected');
-  });
-  expenses.child('records').once("value", function(snapshot) {
-    snapshot.forEach(function(childSnapshot) {
-      var key = childSnapshot.key();
-      var childData = childSnapshot.val();
-      $('<tr/>').text('').prepend($('<td/>').text(childData.amount)).prepend(
-        $('<td/>').text(key)).prepend($('<td/>').text(childData.name +
-        ': ')).appendTo($('#explist'));
-      $('#explist')[0].scrollTop = $('#explist')[0].scrollHeight;
-    });
-    settotals(expenses, '#spend');
-  });
-  accounts.child('records').once("value", function(snapshot) {
-    snapshot.forEach(function(childSnapshot) {
-      var key = childSnapshot.key();
-      var childData = childSnapshot.val();
-      $('<tr/>').text('').prepend($('<td/>').text(childData.amount)).prepend(
-        $('<td/>').text(childData.name + ': ')).appendTo($(
-        '#acclist'));
-      $('#acclist')[0].scrollTop = $('#acclist')[0].scrollHeight;
-    });
-    settotals(expenses, '#available');
-  });
+  displayList('#budlist', allocations);
+  displayList('#inclist', incomes);
+  displayList('#explist', expenses);
+  displayList('#acclist', accounts);
+  settotals(allocations, '#budgeted');
+  settotals(incomes, '#expected');
+  settotals(expenses, '#spend');
+  settotals(accounts, '#available');
+  window.setTimeout(function() {
+    settotals(null, '#totals');
+    settotals(null, '#diff');
+  }, 5000);
 }
 
 function sendtodb(id) {
@@ -76,18 +43,17 @@ function sendtodb(id) {
         addRecord('rec' + ss.val(), data, '#expected', incomes);
       }
     });
-    //$('#expected').text(total);
     $('#inc').val('');
     $('#incamt').val('');
   } else if (id === 'expbtn') {
     var exp = $('#exp').val();
     var amt = $('#expamt').val();
-    var rec = $('#expselect').val();
+    var category = $('#expselect').val();
     if (!validate(exp, amt, '#experror')) {
       closealert('#experror');
       return;
     }
-    if (rec === '0') {
+    if (category === '0') {
       $('#experror').addClass('alert alert-danger col-md-12');
       $('#experror').text('Please select Category');
       closealert('#experror');
@@ -95,6 +61,7 @@ function sendtodb(id) {
     }
     var data = {
       name: exp,
+      cat: category,
       amount: amt
     };
     expenses.child('counter').transaction(function(currentValue) {
@@ -103,7 +70,7 @@ function sendtodb(id) {
       if (err) {
         setError(err);
       } else if (committed) {
-        addRecord(rec, data, '#spend', expenses);
+        addRecord('rec' + ss.val(), data, '#spend', expenses);
       }
     });
     $('#exp').val('');
@@ -154,7 +121,6 @@ function sendtodb(id) {
     $('#budg').val('');
     $('#budgamt').val('');
   }
-  
 }
 
 function addRecord(recordid, data, id, type) {
@@ -168,17 +134,41 @@ function addRecord(recordid, data, id, type) {
   type.child('records').on('child_added', function(snapshot) {
     var message = snapshot.val();
   });
-  //$('<tr/>').text('').prepend($('<td/>').text(amount)).prepend($('<td/>').text(name+': ')).appendTo($(id));
 }
 
-function displayList(id, name, text) {
-  $('<div/>').text(text).prepend($('<em/>').text(name + ': ')).appendTo($(id));
-  $(id)[0].scrollTop = $(id)[0].scrollHeight;
+function displayList(id, type) {
+  type.child('records').once("value", function(snapshot) {
+    var i = 1;
+    var source = $(id).closest('tbody').attr('id');
+    snapshot.forEach(function(childSnapshot) {
+      var key = childSnapshot.key();
+      var childData = childSnapshot.val();
+      var delfunction = "deleteitem('" + key + "', '" + childData.name + "', '" + source + "')";
+      todelete = '<button id="' + key + '" type="button" class="btn btn-default btn-sm" onclick="' + delfunction + '"> <span class="glyphicon glyphicon-remove " aria-hidden="true"></span></button>';
+      var catid = 'cat' + i;
+      if (type === allocations) {        
+        var itemid = 'item' + i;
+        categorytotals(childData.name, '#' + catid);
+        $('<tr/>').text('').prepend($('<td/>').html(todelete)).prepend($('<td id="' + catid + '">').text('')).prepend($('<td/>').text(childData.amount)).prepend($('<td id="' + itemid + '">').text(childData.name)).prepend($('<td class="priority">').text(i)).appendTo($(id));
+        $('<option/>').text(childData.name).appendTo($('#expselect'));
+      } else if (type === expenses) {
+        $('<tr/>').text('').prepend($('<td/>').html(todelete)).prepend($('<td id="' + catid + '">').text('')).prepend($('<td/>').text(childData.amount)).prepend($('<td/>').text(childData.cat)).prepend($('<td/>').text(childData.name)).prepend($('<td class="priority">').text(i)).appendTo($(id));
+      } else {
+        $('<tr/>').text('').prepend($('<td/>').html(todelete)).prepend($('<td/>').text(childData.amount)).prepend($('<td class="item">').text(childData.name)).prepend($('<td class="priority">').text(i)).appendTo($(id));
+      }
+      i += 1;
+    });
+  });
 }
 $(document).ready(function() {
   $('#tabs a').click(function(e) {
     e.preventDefault();
     $(this).tab('show');
+  });
+  $("span.glyphicon-remove").hover(function() {
+    $(this).parent().addClass("btn-danger");
+  }, function() {
+    $(this).parent().removeClass("btn-danger");
   });
 });
 
@@ -187,11 +177,6 @@ function closealert(id) {
     $(id).removeClass('alert alert-danger col-md-12');
     $(id).text('');
   }, 4000);
-  /*window.setTimeout(function() {
-    $(".alert").fadeTo(500, 0).slideUp(500, function(){
-        $(this).remove(); 
-    });
-  }, 4000);*/
 }
 
 function validate(name, amt, id) {
@@ -206,13 +191,120 @@ function validate(name, amt, id) {
 function settotals(type, id) {
   var totals = 0,
     amt;
-  type.child('records').once("value", function(snapshot) {
+  if (id === '#totals') {
+    inctotals = parseInt($('#available').text()) + parseInt($('#expected').text());
+    $(id).html('Total: <span  class="pull-right">' + inctotals.toFixed(2) + '</span>');
+  } else if (id === '#diff') {
+    var spenddiff = parseInt($('#budgeted').text()) - parseInt($('#spend').text());
+    if (spenddiff < 0) {
+      $('#diff').addClass('list-group-item-danger');
+    } else {
+      $('#diff').addClass('list-group-item-success');
+    }
+    $(id).html('Difference: <span  class="pull-right">' + spenddiff.toFixed(2) + '</span>');
+  } else {
+    type.child('records').once("value", function(snapshot) {
+      snapshot.forEach(function(childSnapshot) {
+        var childData = childSnapshot.val();
+        amt = parseInt(childData.amount);
+        totals += amt;
+      });
+      $(id).text(totals.toFixed(2));
+    });
+  }
+}
+
+function categorytotals(cat, catid) {
+  var tot = 0;
+  expenses.child('records').once("value", function(snapshot) {
     snapshot.forEach(function(childSnapshot) {
       var childData = childSnapshot.val();
+      var category = childData.cat;
       amt = parseInt(childData.amount);
-      totals += amt;
+      if (category === cat) {
+        tot += amt;
+      }
     });
-    $(id).text(totals);
+    $(catid).text(tot);
   });
-  //return totals;
+}
+
+function deleteitem(id, name, src) {
+  var type, list;
+  if (src === 'budlist') {
+    type = allocations;
+    list = '#budgeted';
+  } else if (src === 'inclist') {
+    type = incomes;
+    list = '#expected';
+  } else if (src === 'explist') {
+    type = expenses;
+    list = '#spend';
+  } else if (src === 'acclist') {
+    type = accounts;
+    list = '#available';
+  }
+  var sure = confirm("Are you sure?");
+  if (!sure) {
+    return;
+  }
+  if (type === allocations) {
+    var found = false;
+    expenses.child('records').once("value", function(snapshot) {
+      snapshot.forEach(function(childSnapshot) {
+        var childData = childSnapshot.val();
+        var category = childData.cat;
+        if (category === name) {
+          found = true;
+          return;
+        }
+        console.log(name, category, found);
+      });
+      console.log(found);
+      if (found) {
+        $('#budgerror').addClass('alert alert-danger col-md-12');
+        $('#budgerror').text('Category contains expenses items. Please delete them first');
+        closealert('#budgerror');
+        return false;
+      } else {
+        allocations.child('records').child(id).remove();
+      }
+    });
+  } else {
+    type.child('records').child(id).remove();
+  }
+  $('#' + src).html('');
+  displayList('#' + src, type);
+  settotals(type, list);
+  window.setTimeout(function() {
+    settotals(null, '#totals');
+  }, 1000);
+}
+
+function savepriority(id) {
+  var tableid = $('#' + id).closest('table').attr('id');
+  var table = document.getElementById(tableid);
+  var rows = table.rows.length;
+  var j = 1;
+  for (var i = 2, row; row = table.rows[i]; i++) {
+    var itemid = 'item' + j;
+    var priority = $('#' + itemid).closest('tr').children('.priority').text();
+    if (table.rows[i].cells.namedItem(itemid)) {
+      var item = table.rows[i].cells.namedItem(itemid).innerHTML;
+      allocations.child('records').once("value", function(snapshot) {
+        snapshot.forEach(function(childSnapshot) {
+          var key = childSnapshot.key();
+          var childData = childSnapshot.val();
+          if (item === childData.name) {
+            console.log(item);
+            console.log(childData.name);
+            console.log(priority);
+          }
+          
+        });
+        
+      });
+    }
+    j += 1;
+  }
 }
