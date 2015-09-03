@@ -10,16 +10,22 @@ function loaditems() {
     var i = 1;
     snapshot.forEach(function(childSnapshot) {
       var key = childSnapshot.key();
-      var childData = childSnapshot.val();
-      $('<tr/>').text('').prepend($('<td/>').text(childData.amount)).prepend(
+      var childData = childSnapshot.val();      
+      var catid = 'cat' + i; 
+
+      categorytotals(childData.name, '#' + catid);
+
+      $('<tr/>').text('').prepend($('<td id="'+ catid +'">').text('')).prepend($('<td/>').text(childData.amount)).prepend(
         $('<td/>').text(childData.name + ': ')).prepend($(
         '<td class="priority">').text(i)).appendTo($('#budlist'));
       $('#budlist')[0].scrollTop = $('#budlist')[0].scrollHeight;
       $('<option/>').text(childData.name).appendTo($('#expselect'));
+      
       i += 1;
     });
     settotals(allocations, '#budgeted');
   });
+
   incomes.child('records').once("value", function(snapshot) {
     snapshot.forEach(function(childSnapshot) {
       var key = childSnapshot.key();
@@ -31,17 +37,19 @@ function loaditems() {
     });
     settotals(incomes, '#expected');
   });
+
   expenses.child('records').once("value", function(snapshot) {
     snapshot.forEach(function(childSnapshot) {
       var key = childSnapshot.key();
       var childData = childSnapshot.val();
       $('<tr/>').text('').prepend($('<td/>').text(childData.amount)).prepend(
-        $('<td/>').text(key)).prepend($('<td/>').text(childData.name +
+        $('<td/>').text(childData.cat)).prepend($('<td/>').text(childData.name +
         ': ')).appendTo($('#explist'));
       $('#explist')[0].scrollTop = $('#explist')[0].scrollHeight;
     });
     settotals(expenses, '#spend');
   });
+
   accounts.child('records').once("value", function(snapshot) {
     snapshot.forEach(function(childSnapshot) {
       var key = childSnapshot.key();
@@ -53,20 +61,24 @@ function loaditems() {
     });
     settotals(expenses, '#available');
   });
+
 }
 
 function sendtodb(id) {
   if (id === 'incbtn') {
     var inc = $('#inc').val();
     var amt = $('#incamt').val();
+
     if (!validate(inc, amt, '#incerror')) {
       closealert('#incerror');
       return;
     }
+
     var data = {
       name: inc,
       amount: amt
     };
+
     incomes.child('counter').transaction(function(currentValue) {
       return (currentValue || 0) + 1;
     }, function(err, committed, ss) {
@@ -76,50 +88,62 @@ function sendtodb(id) {
         addRecord('rec' + ss.val(), data, '#expected', incomes);
       }
     });
-    //$('#expected').text(total);
+
+
     $('#inc').val('');
     $('#incamt').val('');
+
   } else if (id === 'expbtn') {
     var exp = $('#exp').val();
     var amt = $('#expamt').val();
-    var rec = $('#expselect').val();
+    var category = $('#expselect').val();
+
     if (!validate(exp, amt, '#experror')) {
       closealert('#experror');
       return;
     }
-    if (rec === '0') {
+
+    if (category === '0') {
       $('#experror').addClass('alert alert-danger col-md-12');
       $('#experror').text('Please select Category');
       closealert('#experror');
       return;
     }
+
     var data = {
       name: exp,
+      cat: category,
       amount: amt
     };
+
     expenses.child('counter').transaction(function(currentValue) {
       return (currentValue || 0) + 1;
     }, function(err, committed, ss) {
       if (err) {
         setError(err);
       } else if (committed) {
-        addRecord(rec, data, '#spend', expenses);
+        addRecord('rec' + ss.val(), data, '#spend', expenses);
       }
     });
+
     $('#exp').val('');
     $('#expamt').val('');
     $('#expselect').val('0');
+
   } else if (id === 'accbtn') {
     var acc = $('#acc').val();
     var amt = $('#accbal').val();
+
     if (!validate(acc, amt, '#accerror')) {
       closealert('#accerror');
       return;
     }
+
     var data = {
       name: acc,
       amount: amt
     };
+
     accounts.child('counter').transaction(function(currentValue) {
       return (currentValue || 0) + 1;
     }, function(err, committed, ss) {
@@ -129,6 +153,7 @@ function sendtodb(id) {
         addRecord('rec' + ss.val(), data, '#available', accounts);
       }
     });
+
     $('#acc').val('');
     $('#accbal').val('');
   } else if (id === 'budbtn') {
@@ -138,10 +163,12 @@ function sendtodb(id) {
       closealert('#budgerror');
       return;
     }
+
     var data = {
       name: bud,
       amount: amt
     };
+
     allocations.child('counter').transaction(function(currentValue) {
       return (currentValue || 0) + 1;
     }, function(err, committed, ss) {
@@ -151,6 +178,7 @@ function sendtodb(id) {
         addRecord('rec' + ss.val(), data, '#budgeted', allocations);
       }
     });
+
     $('#budg').val('');
     $('#budgamt').val('');
   }
@@ -165,16 +193,17 @@ function addRecord(recordid, data, id, type) {
       settotals(type, id);
     }
   });
+
   type.child('records').on('child_added', function(snapshot) {
     var message = snapshot.val();
   });
-  //$('<tr/>').text('').prepend($('<td/>').text(amount)).prepend($('<td/>').text(name+': ')).appendTo($(id));
 }
 
 function displayList(id, name, text) {
   $('<div/>').text(text).prepend($('<em/>').text(name + ': ')).appendTo($(id));
   $(id)[0].scrollTop = $(id)[0].scrollHeight;
 }
+
 $(document).ready(function() {
   $('#tabs a').click(function(e) {
     e.preventDefault();
@@ -187,11 +216,7 @@ function closealert(id) {
     $(id).removeClass('alert alert-danger col-md-12');
     $(id).text('');
   }, 4000);
-  /*window.setTimeout(function() {
-    $(".alert").fadeTo(500, 0).slideUp(500, function(){
-        $(this).remove(); 
-    });
-  }, 4000);*/
+  
 }
 
 function validate(name, amt, id) {
@@ -200,6 +225,7 @@ function validate(name, amt, id) {
     $(id).text('Please enter valid data');
     return false;
   }
+  
   return true;
 }
 
@@ -214,5 +240,21 @@ function settotals(type, id) {
     });
     $(id).text(totals);
   });
-  //return totals;
+}
+
+function categorytotals(cat, catid) {
+  var tot = 0;
+  expenses.child('records').once("value", function(snapshot) {
+    
+    snapshot.forEach(function(childSnapshot) {      
+      var childData = childSnapshot.val(); 
+      var category = childData.cat;
+      amt = parseInt(childData.amount);
+      if (category === cat) {
+        tot += amt;        
+      };    
+    });        
+    $(catid).text(tot);
+  }); 
+  
 }
