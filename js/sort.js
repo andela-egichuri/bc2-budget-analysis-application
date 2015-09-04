@@ -13,15 +13,7 @@ $(document).ready(function() {
       renumber_table('#budgtable')
     }
   }).disableSelection();
-  //Delete button in table rows     
-  $('table').on('click', '.btn-delete', function() {
-    tableID = '#' + $(this).closest('table').attr('id');
-    r = confirm('Delete this item?');
-    if (r) {
-      $(this).closest('tr').remove();
-      renumber_table(tableID);
-    }
-  });
+  
 }); //Renumber table rows 
 function renumber_table(tableID) {
   $(tableID + " tr").each(function() {
