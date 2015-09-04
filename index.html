@@ -166,12 +166,16 @@
             <div class="form-group form-inline">
               <p>You can add more items below</p>
 
-              <p><span class="" id="experror"></span></p><input class="form-control" id='exp' placeholder='Add Item' required="" type='text'> <input class="form-control" id='expamt' placeholder='Amount' required="" type='number'> <select class="form-control" id="expselect">
+              <p><span class="" id="experror"></span></p>
+              <input class="form-control" id='dat' placeholder='Add Item' required="" type='hidden'> 
+              <input class="form-control" id='exp' placeholder='Add Item' required="" type='text'> 
+              <input class="form-control" id='expamt' placeholder='Amount' required="" type='number'> <select class="form-control" id="expselect">
                 <option value="0">
                   Select Category
                 </option>
               </select> 
-               <button class="btn btn-default btn-sm" id='expbtn' onclick="sendtodb(this.id)" type="button"><span class="glyphicon glyphicon-plus"></span></button>
+               <button class="btn btn-default btn-sm" id='expbtn' onclick="sendtodb(this.id)" type="button">
+                <span class="glyphicon glyphicon-plus"></span></button>
             </div>
           </div>
 

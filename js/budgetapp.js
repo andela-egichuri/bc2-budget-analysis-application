@@ -296,7 +296,7 @@ function savepriority(id) {
     
     if (table.rows[i].cells.namedItem(itemid)) {
       //var item = table.rows[i].cells.namedItem(itemid).innerHTML;
-      allocations.child('records').child(key).update({prio : priority});
+      allocations.child('records').child(key).update({prio : priority}, prioritysaved());
         
     }
 
@@ -323,6 +323,17 @@ function resetFunction() {
    window.clearInterval(action);
  }
 
+var prioritysaved = function(error) {
+  if (error) {
+    $('#budgerror').addClass('alert alert-danger col-md-12');
+    $('#budgerror').text('Unable to save priority');
+    closealert('#budgerror');
+  } else {
+    $('#budgerror').addClass('alert alert-danger col-md-12');
+    $('#budgerror').text('Item priority saved');
+    closealert('#budgerror');
+  }
+};
 /*
 
 document.addEventListener('DOMContentLoaded',function(){
