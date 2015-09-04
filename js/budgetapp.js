@@ -3,24 +3,9 @@ var incomes = myDataRef.child('incomes');
 var expenses = myDataRef.child('expenses');
 var accounts = myDataRef.child('accounts');
 var allocations = myDataRef.child('allocations');
-var executed = false,
-  inctotals = 0,
+var inctotals = 0,
   todelete;
 
-function loaditems() {
-  displayList('#budlist', allocations);
-  displayList('#inclist', incomes);
-  displayList('#explist', expenses);
-  displayList('#acclist', accounts);
-  settotals(allocations, '#budgeted');
-  settotals(incomes, '#expected');
-  settotals(expenses, '#spend');
-  settotals(accounts, '#available');
-  window.setTimeout(function() {
-    settotals(null, '#totals');
-    settotals(null, '#diff');
-  }, 5000);
-}
 
 function sendtodb(id) {
   if (id === 'incbtn') {
@@ -124,6 +109,16 @@ function sendtodb(id) {
 }
 
 function addRecord(recordid, data, id, type) {
+  var type, list;
+  if (id === '#budgeted') {    
+    src = 'budlist';
+  } else if (id === '#expected') {
+    src = 'explist ';
+  } else if (id === '#spend') {
+    src = 'explist';
+  } else if (id === '#available') {
+    src = 'acclist';
+  }
   type.child('records').child(recordid).set(data, function(error) {
     if (error) {
       alert("error saving data." + error);
@@ -134,6 +129,12 @@ function addRecord(recordid, data, id, type) {
   type.child('records').on('child_added', function(snapshot) {
     var message = snapshot.val();
   });
+  $('#' + src).html('');
+  displayList('#' + src, type);
+  settotals(type, list);
+  window.setTimeout(function() {
+    settotals(null, '#totals');
+  }, 1000);
 }
 
 function displayList(id, type) {
@@ -160,6 +161,7 @@ function displayList(id, type) {
     });
   });
 }
+
 $(document).ready(function() {
   $('#tabs a').click(function(e) {
     e.preventDefault();
@@ -258,9 +260,9 @@ function deleteitem(id, name, src) {
           found = true;
           return;
         }
-        console.log(name, category, found);
+        
       });
-      console.log(found);
+      
       if (found) {
         $('#budgerror').addClass('alert alert-danger col-md-12');
         $('#budgerror').text('Category contains expenses items. Please delete them first');
@@ -287,24 +289,64 @@ function savepriority(id) {
   var rows = table.rows.length;
   var j = 1;
   for (var i = 2, row; row = table.rows[i]; i++) {
+
     var itemid = 'item' + j;
     var priority = $('#' + itemid).closest('tr').children('.priority').text();
+    var key = $('#' + itemid).closest('tr').children('td').children('button').attr('id');
+    
     if (table.rows[i].cells.namedItem(itemid)) {
-      var item = table.rows[i].cells.namedItem(itemid).innerHTML;
-      allocations.child('records').once("value", function(snapshot) {
-        snapshot.forEach(function(childSnapshot) {
-          var key = childSnapshot.key();
-          var childData = childSnapshot.val();
-          if (item === childData.name) {
-            console.log(item);
-            console.log(childData.name);
-            console.log(priority);
-          }
-          
-        });
+      //var item = table.rows[i].cells.namedItem(itemid).innerHTML;
+      allocations.child('records').child(key).update({prio : priority}, prioritysaved());
         
-      });
     }
+
     j += 1;
   }
 }
+
+function loaditems() {
+  displayList('#budlist', allocations);
+  displayList('#inclist', incomes);
+  displayList('#explist', expenses);
+  displayList('#acclist', accounts);
+  settotals(allocations, '#budgeted');
+  settotals(incomes, '#expected');
+  settotals(expenses, '#spend');
+  settotals(accounts, '#available');
+  window.setTimeout(function() {
+    settotals(null, '#totals');
+    settotals(null, '#diff');
+  }, 5000);
+}
+
+function resetFunction() {
+   window.clearInterval(action);
+ }
+
+var prioritysaved = function(error) {
+  if (error) {
+    $('#budgerror').addClass('alert alert-danger col-md-12');
+    $('#budgerror').text('Unable to save priority');
+    closealert('#budgerror');
+  } else {
+    $('#budgerror').addClass('alert alert-danger col-md-12');
+    $('#budgerror').text('Item priority saved');
+    closealert('#budgerror');
+  }
+};
+/*
+
+document.addEventListener('DOMContentLoaded',function(){
+    document.getElementById('notifyBtn').addEventListener('click',function(){
+
+      if(! ('Notification' in window) ){
+        alert('Web Notification is not supported');
+        return;
+      } 
+
+      Notification.requestPermission(function(permission){
+        var notification = new Notification("Hi there!",{body:'I am here to talk about HTML5 Web Notification API'});
+      });
+    });
+  });
+  */
